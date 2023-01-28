@@ -1,5 +1,4 @@
 "use strict";
-// import util from 'util';
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -14,6 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.checkConditionAndRewardUser = exports.giveRewards = exports.checkCondition = exports.getRewardsByRewardData = exports.getRewardDataByIDs = exports.filterCompletedRewards = exports.getIDsByCondition = exports.isConditionActive = void 0;
+const util_1 = __importDefault(require("util"));
 const database_1 = __importDefault(require("../database"));
 const plugins_1 = __importDefault(require("../plugins"));
 // import promisify from '../promisify';
@@ -78,13 +78,14 @@ function checkCondition(reward, method) {
         if (method.constructor && method.constructor.name !== 'AsyncFunction') {
             // The next line calls a function in a module that has not been updated to TS yet
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-            // const methodPromised = util.promisify(method);
-            const value = yield method();
+            const methodModified = util_1.default.promisify(method);
+            const value = yield methodModified();
             const bool = yield plugins_1.default.hooks.fire(`filter:rewards.checkConditional:${reward.conditional}`, { left: value, right: reward.value });
             return bool;
         }
-        // The next line calls a function in a module that has not been updated to TS yet
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        const value = yield method();
+        const bool = yield plugins_1.default.hooks.fire(`filter:rewards.checkConditional:${reward.conditional}`, { left: value, right: reward.value });
+        return bool;
     });
 }
 exports.checkCondition = checkCondition;

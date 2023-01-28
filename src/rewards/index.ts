@@ -1,4 +1,4 @@
-// import util from 'util';
+import util from 'util';
 
 import db from '../database';
 
@@ -32,7 +32,7 @@ interface rewardType {
     id: number;
     rid:number;
     claimable: string;
-    conditional: number;
+    conditional: unknown;
     value: number;
 }
 
@@ -72,18 +72,20 @@ export async function getRewardsByRewardData(rewards:rewardType[]) : Promise<rew
 }
 
 export async function checkCondition(reward:rewardType,
-    method: ((() => Promise<void>)|(() => void))) {
+    method: ((() => Promise<unknown>)|(() => unknown))) {
     if (method.constructor && method.constructor.name !== 'AsyncFunction') {
         // The next line calls a function in a module that has not been updated to TS yet
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        // const methodPromised = util.promisify(method);
-        const value = await method();
+        const methodModified = util.promisify(method);
+        const value = await methodModified();
         const bool : Promise<boolean> =
         await plugins.hooks.fire(`filter:rewards.checkConditional:${reward.conditional}`, { left: value, right: reward.value }) as Promise<boolean>;
         return bool;
     }
-    // The next line calls a function in a module that has not been updated to TS yet
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    const value = await method();
+    const bool : Promise<boolean> =
+    await plugins.hooks.fire(`filter:rewards.checkConditional:${reward.conditional}`, { left: value, right: reward.value }) as Promise<boolean>;
+    return bool;
 }
 
 export async function giveRewards(uid:number, rewards:rewardType[]) {
