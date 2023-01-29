@@ -32,7 +32,7 @@ interface rewardType {
     id: number;
     rid:number;
     claimable: string;
-    conditional: unknown;
+    conditional: number|string;
     value: number;
 }
 
@@ -76,8 +76,7 @@ export async function checkCondition(reward:rewardType,
     if (method.constructor && method.constructor.name !== 'AsyncFunction') {
         // The next line calls a function in a module that has not been updated to TS yet
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        const methodModified = util.promisify(method);
-        const value = await methodModified();
+        const value = util.promisify(method);
         const bool : Promise<boolean> =
         await plugins.hooks.fire(`filter:rewards.checkConditional:${reward.conditional}`, { left: value, right: reward.value }) as Promise<boolean>;
         return bool;
